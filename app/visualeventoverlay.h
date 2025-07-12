@@ -14,6 +14,7 @@
 
 class SessionStack;
 class Terminal;
+class Browser;
 
 class QTimer;
 
@@ -79,12 +80,16 @@ public:
     ~VisualEventOverlay() override;
 
 public Q_SLOTS:
-    void highlightTerminal(Terminal *terminal, bool persistent = false);
+    void highlightContent(QWidget *contentWidget, bool persistent = false);
     void removeTerminalHighlight();
 
-    void indicateKeyboardInputBlocked(Terminal *terminal);
+Q_SIGNALS:
+    void clicked();
 
-    void terminalEvent(Terminal *terminal, EventRect::EventType type, EventRect::EventFlags flags = EventRect::NoFlags);
+public Q_SLOTS:
+    void indicateKeyboardInputBlocked(QWidget *contentWidget);
+
+    void contentEvent(QWidget *contentWidget, EventRect::EventType type, EventRect::EventFlags flags = EventRect::NoFlags);
 
 protected:
     void showEvent(QShowEvent *) override;

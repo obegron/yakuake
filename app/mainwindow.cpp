@@ -7,6 +7,7 @@
 */
 
 #include "mainwindow.h"
+#include "browser.h"
 #include "config/appearancesettings.h"
 #include "config/windowsettings.h"
 #include "firstrundialog.h"
@@ -99,7 +100,7 @@ MainWindow::MainWindow(QWidget *parent)
     setupActions();
     setupMenu();
 
-    connect(m_tabBar, SIGNAL(newTabRequested()), m_sessionStack, SLOT(addSession()));
+    connect(m_tabBar, SIGNAL(newTabRequested()), m_sessionStack, SLOT(addTerminalSession()));
     connect(m_tabBar, SIGNAL(lastTabClosed()), m_tabBar, SIGNAL(newTabRequested()));
     connect(m_tabBar, SIGNAL(lastTabClosed()), this, SLOT(handleLastTabClosed()));
     connect(m_tabBar, SIGNAL(tabSelected(int)), m_sessionStack, SLOT(raiseSession(int)));
@@ -107,7 +108,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_tabBar, &TabBar::tabTitleEdited, m_sessionStack, [&](int, QString) {
         m_sessionStack->raiseSession(m_sessionStack->activeSessionId());
     });
-    connect(m_tabBar, SIGNAL(requestTerminalHighlight(int)), m_sessionStack, SLOT(handleTerminalHighlightRequest(int)));
+    connect(m_tabBar, SIGNAL(requestTerminalHighlight(int)), m_sessionStack, SLOT(handleHighlightRequest(int)));
     connect(m_tabBar, SIGNAL(requestRemoveTerminalHighlight()), m_sessionStack, SIGNAL(removeTerminalHighlight()));
     connect(m_tabBar, SIGNAL(tabContextMenuClosed()), m_sessionStack, SIGNAL(removeTerminalHighlight()));
 
@@ -117,6 +118,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_sessionStack, SIGNAL(activeTitleChanged(QString)), m_titleBar, SLOT(setTitle(QString)));
     connect(m_sessionStack, SIGNAL(activeTitleChanged(QString)), this, SLOT(setWindowTitle(QString)));
     connect(m_sessionStack, &SessionStack::wantsBlurChanged, this, &MainWindow::applyWindowProperties);
+    connect(m_sessionStack, SIGNAL(activityDetected(Session *, int)), this, SLOT(handleActivity(Session *, int)));
+    connect(m_sessionStack, SIGNAL(silenceDetected(Session *, int)), this, SLOT(handleSilence(Session *, int)));
 
     connect(&m_mousePoller, SIGNAL(timeout()), this, SLOT(pollMouse()));
 
@@ -128,7 +131,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     applySettings();
 
-    m_sessionStack->addSession();
+    m_sessionStack->addTerminalSession();
 
     if (Settings::firstRun()) {
         QMetaObject::invokeMethod(this, "toggleWindowState", Qt::QueuedConnection);
@@ -293,26 +296,32 @@ void MainWindow::setupActions()
     actionCollection()->setDefaultShortcut(action, QKeySequence(Qt::ALT | Qt::SHIFT | Qt::Key_Up));
     connect(action, SIGNAL(triggered()), this, SLOT(decreaseWindowHeight()));
 
-    action = actionCollection()->addAction(QStringLiteral("new-session"));
-    action->setText(xi18nc("@action", "New Session"));
+    action = actionCollection()->addAction(QStringLiteral("new-terminal-session"));
+    action->setText(xi18nc("@action", "New Terminal Session"));
     action->setIcon(QIcon::fromTheme(QStringLiteral("tab-new")));
     actionCollection()->setDefaultShortcut(action, QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_T));
-    connect(action, SIGNAL(triggered()), m_sessionStack, SLOT(addSession()));
+    connect(action, SIGNAL(triggered()), m_sessionStack, SLOT(addTerminalSession()));
 
-    action = actionCollection()->addAction(QStringLiteral("new-session-two-horizontal"));
+    action = actionCollection()->addAction(QStringLiteral("new-browser-session"));
+    action->setText(xi18nc("@action", "New Browser Session"));
+    action->setIcon(QIcon::fromTheme(QStringLiteral("web-browser")));
+    actionCollection()->setDefaultShortcut(action, QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_B));
+    connect(action, SIGNAL(triggered()), m_sessionStack, SLOT(addBrowserSession()));
+
+    action = actionCollection()->addAction(QStringLiteral("new-terminal-session-two-horizontal"));
     action->setText(xi18nc("@action", "Two Terminals, Horizontally"));
     action->setIcon(QIcon::fromTheme(QStringLiteral("tab-new")));
-    connect(action, SIGNAL(triggered()), m_sessionStack, SLOT(addSessionTwoHorizontal()));
+    connect(action, SIGNAL(triggered()), m_sessionStack, SLOT(addTerminalSessionTwoHorizontal()));
 
-    action = actionCollection()->addAction(QStringLiteral("new-session-two-vertical"));
+    action = actionCollection()->addAction(QStringLiteral("new-terminal-session-two-vertical"));
     action->setText(xi18nc("@action", "Two Terminals, Vertically"));
     action->setIcon(QIcon::fromTheme(QStringLiteral("tab-new")));
-    connect(action, SIGNAL(triggered()), m_sessionStack, SLOT(addSessionTwoVertical()));
+    connect(action, SIGNAL(triggered()), m_sessionStack, SLOT(addTerminalSessionTwoVertical()));
 
-    action = actionCollection()->addAction(QStringLiteral("new-session-quad"));
+    action = actionCollection()->addAction(QStringLiteral("new-terminal-session-quad"));
     action->setText(xi18nc("@action", "Four Terminals, Grid"));
     action->setIcon(QIcon::fromTheme(QStringLiteral("tab-new")));
-    connect(action, SIGNAL(triggered()), m_sessionStack, SLOT(addSessionQuad()));
+    connect(action, SIGNAL(triggered()), m_sessionStack, SLOT(addTerminalSessionQuad()));
 
     action = actionCollection()->addAction(QStringLiteral("close-session"));
     action->setText(xi18nc("@action", "Close Session"));
@@ -386,13 +395,13 @@ void MainWindow::setupActions()
     action->setText(xi18nc("@action", "Previous Terminal"));
     action->setIcon(QIcon::fromTheme(QStringLiteral("go-previous")));
     actionCollection()->setDefaultShortcut(action, QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Tab));
-    connect(action, SIGNAL(triggered()), m_sessionStack, SIGNAL(previousTerminal()));
+    connect(action, SIGNAL(triggered()), m_sessionStack, SIGNAL(previous()));
 
     action = actionCollection()->addAction(QStringLiteral("next-terminal"));
     action->setText(xi18nc("@action", "Next Terminal"));
     action->setIcon(QIcon::fromTheme(QStringLiteral("go-next")));
     actionCollection()->setDefaultShortcut(action, QKeySequence(Qt::CTRL | Qt::Key_Tab));
-    connect(action, SIGNAL(triggered()), m_sessionStack, SIGNAL(nextTerminal()));
+    connect(action, SIGNAL(triggered()), m_sessionStack, SIGNAL(next()));
 
     action = actionCollection()->addAction(QStringLiteral("close-active-terminal"));
     action->setText(xi18nc("@action", "Close Active Terminal"));
@@ -499,7 +508,7 @@ void MainWindow::handleContextDependentAction(QAction *action, int sessionId)
         m_tabBar->interactiveRename(sessionId);
 
     if (action == actionCollection()->action(QStringLiteral("close-active-terminal")))
-        m_sessionStack->closeActiveTerminal(sessionId);
+        m_sessionStack->closeActive(sessionId);
 
     if (action == actionCollection()->action(QStringLiteral("split-left-right")))
         m_sessionStack->splitSessionLeftRight(sessionId);
@@ -511,16 +520,16 @@ void MainWindow::handleContextDependentAction(QAction *action, int sessionId)
         m_sessionStack->splitSessionAuto(sessionId);
 
     if (action == actionCollection()->action(QStringLiteral("grow-terminal-right")))
-        m_sessionStack->tryGrowTerminalRight(m_sessionStack->activeTerminalId());
+        m_sessionStack->tryGrowRight(m_sessionStack->activeId());
 
     if (action == actionCollection()->action(QStringLiteral("grow-terminal-left")))
-        m_sessionStack->tryGrowTerminalLeft(m_sessionStack->activeTerminalId());
+        m_sessionStack->tryGrowLeft(m_sessionStack->activeId());
 
     if (action == actionCollection()->action(QStringLiteral("grow-terminal-top")))
-        m_sessionStack->tryGrowTerminalTop(m_sessionStack->activeTerminalId());
+        m_sessionStack->tryGrowTop(m_sessionStack->activeId());
 
     if (action == actionCollection()->action(QStringLiteral("grow-terminal-bottom")))
-        m_sessionStack->tryGrowTerminalBottom(m_sessionStack->activeTerminalId());
+        m_sessionStack->tryGrowBottom(m_sessionStack->activeId());
 }
 
 void MainWindow::handleContextDependentToggleAction(bool checked, QAction *action, int sessionId)
@@ -567,11 +576,11 @@ void MainWindow::handleToggleTerminalKeyboardInput(bool checked)
         return;
 
     bool ok = false;
-    int terminalId = action->data().toInt(&ok);
+    int id = action->data().toInt(&ok);
     if (!ok)
         return;
 
-    m_sessionStack->setTerminalKeyboardInputEnabled(terminalId, !checked);
+    m_sessionStack->setContentKeyboardInputEnabled(id, !checked);
 }
 
 void MainWindow::handleToggleTerminalMonitorActivity(bool checked)
@@ -582,11 +591,11 @@ void MainWindow::handleToggleTerminalMonitorActivity(bool checked)
         return;
 
     bool ok = false;
-    int terminalId = action->data().toInt(&ok);
+    int id = action->data().toInt(&ok);
     if (!ok)
         return;
 
-    m_sessionStack->setTerminalMonitorActivityEnabled(terminalId, checked);
+    m_sessionStack->setContentMonitorActivityEnabled(id, checked);
 }
 
 void MainWindow::handleToggleTerminalMonitorSilence(bool checked)
@@ -597,38 +606,42 @@ void MainWindow::handleToggleTerminalMonitorSilence(bool checked)
         return;
 
     bool ok = false;
-    int terminalId = action->data().toInt(&ok);
+    int id = action->data().toInt(&ok);
     if (!ok)
         return;
 
-    m_sessionStack->setTerminalMonitorSilenceEnabled(terminalId, checked);
+    m_sessionStack->setContentMonitorSilenceEnabled(id, checked);
 }
 
-void MainWindow::handleTerminalActivity(Terminal *terminal)
+void MainWindow::handleActivity(Session *session, int id)
 {
-    Session *session = qobject_cast<Session *>(sender());
+    if (session->contentType() == Session::TerminalType) {
+        disconnect(session->getTerminal(id), SIGNAL(activityDetected(Terminal *)), session, SIGNAL(activityDetected(Terminal *)));
 
-    if (session) {
-        disconnect(terminal, SIGNAL(activityDetected(Terminal *)), session, SIGNAL(activityDetected(Terminal *)));
-
-        QString message(xi18nc("@info", "Activity detected in monitored terminal in session \"%1\".", m_tabBar->tabTitle(session->id())));
+        QString message = xi18nc("@info", "Activity detected in monitored terminal in session %1.", m_tabBar->tabTitle(session->id()));
 
         KNotification *n = new KNotification(QLatin1String("activity"), KNotification::CloseWhenWindowActivated);
-        n->setWindow(terminal->partWidget()->window()->windowHandle());
+        if (session->contentType() == Session::TerminalType) {
+            n->setWindow(session->getTerminal(id)->partWidget()->window()->windowHandle());
+        } else if (session->contentType() == Session::BrowserType) {
+            n->setWindow(session->getBrowser(id)->partWidget()->window()->windowHandle());
+        }
         n->setText(message);
         n->sendEvent();
     }
 }
 
-void MainWindow::handleTerminalSilence(Terminal *terminal)
+void MainWindow::handleSilence(Session *session, int id)
 {
-    Session *session = qobject_cast<Session *>(sender());
-
-    if (session) {
-        QString message(xi18nc("@info", "Silence detected in monitored terminal in session \"%1\".", m_tabBar->tabTitle(session->id())));
+    if (session->contentType() == Session::TerminalType) {
+        QString message = xi18nc("@info", "Silence detected in monitored terminal in session %1.", m_tabBar->tabTitle(session->id()));
 
         KNotification *n = new KNotification(QLatin1String("silence"), KNotification::CloseWhenWindowActivated);
-        n->setWindow(terminal->partWidget()->window()->windowHandle());
+        if (session->contentType() == Session::TerminalType) {
+            n->setWindow(session->getTerminal(id)->partWidget()->window()->windowHandle());
+        } else if (session->contentType() == Session::BrowserType) {
+            n->setWindow(session->getBrowser(id)->partWidget()->window()->windowHandle());
+        }
         n->setText(message);
         n->sendEvent();
     }

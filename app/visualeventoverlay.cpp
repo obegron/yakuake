@@ -5,6 +5,7 @@
 */
 
 #include "visualeventoverlay.h"
+#include "browser.h"
 #include "sessionstack.h"
 #include "settings.h"
 #include "terminal.h"
@@ -73,7 +74,7 @@ VisualEventOverlay::VisualEventOverlay(SessionStack *parent)
 
 VisualEventOverlay::~VisualEventOverlay() = default;
 
-void VisualEventOverlay::highlightTerminal(Terminal *terminal, bool persistent)
+void VisualEventOverlay::highlightContent(QWidget *contentWidget, bool persistent)
 {
     if (!persistent && Settings::terminalHighlightDuration() == 0)
         return;
@@ -85,7 +86,7 @@ void VisualEventOverlay::highlightTerminal(Terminal *terminal, bool persistent)
     if (persistent)
         flags |= EventRect::Persistent;
 
-    terminalEvent(terminal, EventRect::TerminalHighlight, flags);
+    contentEvent(contentWidget, EventRect::TerminalHighlight, flags);
 
     if (!persistent)
         scheduleCleanup(Settings::terminalHighlightDuration());
@@ -109,23 +110,22 @@ void VisualEventOverlay::removeTerminalHighlight()
         hide();
 }
 
-void VisualEventOverlay::indicateKeyboardInputBlocked(Terminal *terminal)
+void VisualEventOverlay::indicateKeyboardInputBlocked(QWidget *contentWidget)
 {
     if (Settings::keyboardInputBlockIndicatorDuration() == 0)
         return;
 
-    terminalEvent(terminal, EventRect::KeyboardInputBlocked);
+    contentEvent(contentWidget, EventRect::KeyboardInputBlocked);
 
     scheduleCleanup(Settings::keyboardInputBlockIndicatorDuration());
 }
 
-void VisualEventOverlay::terminalEvent(Terminal *terminal, EventRect::EventType type, EventRect::EventFlags flags)
+void VisualEventOverlay::contentEvent(QWidget *contentWidget, EventRect::EventType type, EventRect::EventFlags flags)
 {
-    QRect partRect(terminal->partWidget()->rect());
-    const QWidget *partWidget = terminal->partWidget();
+    QRect partRect(contentWidget->rect());
 
-    QPoint topLeft(partWidget->mapTo(parentWidget(), partRect.topLeft()));
-    QPoint bottomRight(partWidget->mapTo(parentWidget(), partRect.bottomRight()));
+    QPoint topLeft(contentWidget->mapTo(parentWidget(), partRect.topLeft()));
+    QPoint bottomRight(contentWidget->mapTo(parentWidget(), partRect.bottomRight()));
 
     EventRect eventRect(topLeft, bottomRight, type, flags);
 

@@ -16,8 +16,10 @@
 #include <QStackedWidget>
 
 class Session;
-class VisualEventOverlay;
+class Terminal;
+class Browser;
 class KActionCollection;
+#include "visualeventoverlay.h"
 
 class SessionStack : public QStackedWidget
 {
@@ -28,7 +30,7 @@ public:
     explicit SessionStack(QWidget *parent = nullptr);
     ~SessionStack() override;
 
-    void closeActiveTerminal(int sessionId = -1);
+    void closeActive(int sessionId = -1);
 
     void editProfile(int sessionId = -1);
 
@@ -41,45 +43,46 @@ public:
     bool wantsBlur() const;
 
 public Q_SLOTS:
-    int addSessionImpl(Session::SessionType type = Session::Single);
-    Q_SCRIPTABLE int addSession();
-    Q_SCRIPTABLE int addSessionTwoHorizontal();
-    Q_SCRIPTABLE int addSessionTwoVertical();
-    Q_SCRIPTABLE int addSessionQuad();
+    int addSessionImpl(Session::SessionContent contentType, Session::SessionType type = Session::Single);
+    void addTerminalSession();
+    void addBrowserSession();
+    Q_SCRIPTABLE int addTerminalSessionTwoHorizontal();
+    Q_SCRIPTABLE int addTerminalSessionTwoVertical();
+    Q_SCRIPTABLE int addTerminalSessionQuad();
 
     Q_SCRIPTABLE void raiseSession(int sessionId);
 
     Q_SCRIPTABLE void removeSession(int sessionId);
-    Q_SCRIPTABLE void removeTerminal(int terminalId);
+    Q_SCRIPTABLE void removeContent(int contentId);
 
     Q_SCRIPTABLE int splitSessionAuto(int sessionId);
     Q_SCRIPTABLE int splitSessionLeftRight(int sessionId);
     Q_SCRIPTABLE int splitSessionTopBottom(int sessionId);
-    Q_SCRIPTABLE int splitTerminalLeftRight(int terminalId);
-    Q_SCRIPTABLE int splitTerminalTopBottom(int terminalId);
+    Q_SCRIPTABLE int splitContentLeftRight(int contentId);
+    Q_SCRIPTABLE int splitContentTopBottom(int contentId);
 
-    Q_SCRIPTABLE int tryGrowTerminalRight(int terminalId, uint pixels = 10);
-    Q_SCRIPTABLE int tryGrowTerminalLeft(int terminalId, uint pixels = 10);
-    Q_SCRIPTABLE int tryGrowTerminalTop(int terminalId, uint pixels = 10);
-    Q_SCRIPTABLE int tryGrowTerminalBottom(int terminalId, uint pixels = 10);
+    Q_SCRIPTABLE int tryGrowRight(int terminalId, uint pixels = 10);
+    Q_SCRIPTABLE int tryGrowLeft(int terminalId, uint pixels = 10);
+    Q_SCRIPTABLE int tryGrowTop(int id, uint pixels = 10);
+    Q_SCRIPTABLE int tryGrowBottom(int id, uint pixels = 10);
 
     Q_SCRIPTABLE int activeSessionId()
     {
         return m_activeSessionId;
     }
-    Q_SCRIPTABLE int activeTerminalId();
+    Q_SCRIPTABLE int activeId();
 
     Q_SCRIPTABLE const QString sessionIdList();
-    Q_SCRIPTABLE const QString terminalIdList();
-    Q_SCRIPTABLE const QString terminalIdsForSessionId(int sessionId);
-    Q_SCRIPTABLE int sessionIdForTerminalId(int terminalId);
+    Q_SCRIPTABLE const QString contentIdList();
+    Q_SCRIPTABLE const QString contentIdsForSessionId(int sessionId);
+    Q_SCRIPTABLE int sessionIdForContentId(int contentId);
 
 #if defined(REMOVE_SENDTEXT_RUNCOMMAND_DBUS_METHODS)
     void runCommand(const QString &command);
-    void runCommandInTerminal(int terminalId, const QString &command);
 #else
     Q_SCRIPTABLE void runCommand(const QString &command);
     Q_SCRIPTABLE void runCommandInTerminal(int terminalId, const QString &command);
+    Q_SCRIPTABLE void runCommandInContent(int contentId, const QString &command);
 #endif
 
     Q_SCRIPTABLE bool isSessionClosable(int sessionId);
@@ -88,26 +91,26 @@ public Q_SLOTS:
 
     Q_SCRIPTABLE bool isSessionKeyboardInputEnabled(int sessionId);
     Q_SCRIPTABLE void setSessionKeyboardInputEnabled(int sessionId, bool enabled);
-    Q_SCRIPTABLE bool isTerminalKeyboardInputEnabled(int terminalId);
-    Q_SCRIPTABLE void setTerminalKeyboardInputEnabled(int terminalId, bool enabled);
-    Q_SCRIPTABLE bool hasTerminalsWithKeyboardInputEnabled(int sessionId);
-    Q_SCRIPTABLE bool hasTerminalsWithKeyboardInputDisabled(int sessionId);
+    Q_SCRIPTABLE bool isContentKeyboardInputEnabled(int contentId);
+    Q_SCRIPTABLE void setContentKeyboardInputEnabled(int contentId, bool enabled);
+    Q_SCRIPTABLE bool hasContentWithKeyboardInputEnabled(int sessionId);
+    Q_SCRIPTABLE bool hasContentWithKeyboardInputDisabled(int sessionId);
 
     Q_SCRIPTABLE bool isSessionMonitorActivityEnabled(int sessionId);
     Q_SCRIPTABLE void setSessionMonitorActivityEnabled(int sessionId, bool enabled);
-    Q_SCRIPTABLE bool isTerminalMonitorActivityEnabled(int terminalId);
-    Q_SCRIPTABLE void setTerminalMonitorActivityEnabled(int terminalId, bool enabled);
-    Q_SCRIPTABLE bool hasTerminalsWithMonitorActivityEnabled(int sessionId);
-    Q_SCRIPTABLE bool hasTerminalsWithMonitorActivityDisabled(int sessionId);
+    Q_SCRIPTABLE bool isContentMonitorActivityEnabled(int contentId);
+    Q_SCRIPTABLE void setContentMonitorActivityEnabled(int contentId, bool enabled);
+    Q_SCRIPTABLE bool hasContentWithMonitorActivityEnabled(int sessionId);
+    Q_SCRIPTABLE bool hasContentWithMonitorActivityDisabled(int sessionId);
 
     Q_SCRIPTABLE bool isSessionMonitorSilenceEnabled(int sessionId);
     Q_SCRIPTABLE void setSessionMonitorSilenceEnabled(int sessionId, bool enabled);
-    Q_SCRIPTABLE bool isTerminalMonitorSilenceEnabled(int terminalId);
-    Q_SCRIPTABLE void setTerminalMonitorSilenceEnabled(int terminalId, bool enabled);
-    Q_SCRIPTABLE bool hasTerminalsWithMonitorSilenceEnabled(int sessionId);
-    Q_SCRIPTABLE bool hasTerminalsWithMonitorSilenceDisabled(int sessionId);
+    Q_SCRIPTABLE bool isContentMonitorSilenceEnabled(int contentId);
+    Q_SCRIPTABLE void setContentMonitorSilenceEnabled(int contentId, bool enabled);
+    Q_SCRIPTABLE bool hasContentWithMonitorSilenceEnabled(int sessionId);
+    Q_SCRIPTABLE bool hasContentWithMonitorSilenceDisabled(int sessionId);
 
-    void handleTerminalHighlightRequest(int terminalId);
+    void handleHighlightRequest(int id);
 
 Q_SIGNALS:
     void sessionAdded(int sessionId, const QString &title);
@@ -117,10 +120,11 @@ Q_SIGNALS:
     void activeTitleChanged(const QString &title);
     void titleChanged(int sessionId, const QString &title);
 
-    void closeTerminal();
+    void previous();
+    void next();
 
-    void previousTerminal();
-    void nextTerminal();
+    void activityDetected(Session *session, int id);
+    void silenceDetected(Session *session, int id);
 
     void manageProfiles();
 
@@ -132,7 +136,11 @@ protected:
     void showEvent(QShowEvent *event) override;
 
 private Q_SLOTS:
-    void handleManualTerminalActivation(Terminal *);
+    void handleCurrentChanged(int index);
+    void handleActivity(Terminal *terminal);
+    void handleSilence(Terminal *terminal);
+    void handleManualActivation(Terminal *terminal);
+    void handleManualActivation(Browser *browser);
 
     void cleanup(int sessionId);
 
@@ -140,10 +148,11 @@ private:
     enum QueryCloseType {
         QueryCloseSession,
         QueryCloseTerminal,
+        QueryCloseBrowser,
     };
     bool queryClose(int sessionId, QueryCloseType type);
 
-    VisualEventOverlay *m_visualEventOverlay = nullptr;
+    VisualEventOverlay *m_visualEventOverlay;
 
     int m_activeSessionId;
 

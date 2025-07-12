@@ -85,6 +85,15 @@ public:
 
     KActionCollection *actionCollection();
 
+    bool closable() const
+    {
+        return m_closable;
+    }
+    void setClosable(bool closable)
+    {
+        m_closable = closable;
+    }
+
     bool wantsBlur() const
     {
         return m_wantsBlur;
@@ -127,6 +136,8 @@ private:
     bool m_monitorActivityEnabled = false;
     bool m_monitorSilenceEnabled = false;
     bool m_wantsBlur = false;
+
+    bool m_closable = true;
 
     bool m_destroying = false;
 };

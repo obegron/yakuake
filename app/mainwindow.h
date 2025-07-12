@@ -19,6 +19,8 @@ class SessionStack;
 class Skin;
 class TabBar;
 class Terminal;
+class Browser;
+class Session;
 class TitleBar;
 
 class KHelpMenu;
@@ -80,8 +82,8 @@ public Q_SLOTS:
     void handleToggleTerminalKeyboardInput(bool checked);
     void handleToggleTerminalMonitorActivity(bool checked);
     void handleToggleTerminalMonitorSilence(bool checked);
-    void handleTerminalActivity(Terminal *terminal);
-    void handleTerminalSilence(Terminal *terminal);
+    void handleActivity(Session *session, int id);
+    void handleSilence(Session *session, int id);
     void handleLastTabClosed();
 
 Q_SIGNALS:

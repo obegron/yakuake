@@ -128,11 +128,12 @@ void TabBar::readyTabContextMenu()
 void TabBar::readySessionMenu()
 {
     if (m_sessionMenu->isEmpty()) {
-        m_sessionMenu->addAction(m_mainWindow->actionCollection()->action(QStringLiteral("new-session")));
+        m_sessionMenu->addAction(m_mainWindow->actionCollection()->action(QStringLiteral("new-terminal-session")));
+        m_sessionMenu->addAction(m_mainWindow->actionCollection()->action(QStringLiteral("new-browser-session")));
         m_sessionMenu->addSeparator();
-        m_sessionMenu->addAction(m_mainWindow->actionCollection()->action(QStringLiteral("new-session-two-horizontal")));
-        m_sessionMenu->addAction(m_mainWindow->actionCollection()->action(QStringLiteral("new-session-two-vertical")));
-        m_sessionMenu->addAction(m_mainWindow->actionCollection()->action(QStringLiteral("new-session-quad")));
+        m_sessionMenu->addAction(m_mainWindow->actionCollection()->action(QStringLiteral("new-terminal-session-two-horizontal")));
+        m_sessionMenu->addAction(m_mainWindow->actionCollection()->action(QStringLiteral("new-terminal-session-two-vertical")));
+        m_sessionMenu->addAction(m_mainWindow->actionCollection()->action(QStringLiteral("new-terminal-session-quad")));
     }
 }
 
@@ -163,13 +164,13 @@ void TabBar::updateToggleActions(int sessionId)
     toggleAction->setChecked(!sessionStack->isSessionClosable(sessionId));
 
     toggleAction = actionCollection->action(QStringLiteral("toggle-session-keyboard-input"));
-    toggleAction->setChecked(!sessionStack->hasTerminalsWithKeyboardInputEnabled(sessionId));
+    toggleAction->setChecked(!sessionStack->hasContentWithKeyboardInputEnabled(sessionId));
 
     toggleAction = actionCollection->action(QStringLiteral("toggle-session-monitor-activity"));
-    toggleAction->setChecked(!sessionStack->hasTerminalsWithMonitorActivityDisabled(sessionId));
+    toggleAction->setChecked(!sessionStack->hasContentWithMonitorActivityDisabled(sessionId));
 
     toggleAction = actionCollection->action(QStringLiteral("toggle-session-monitor-silence"));
-    toggleAction->setChecked(!sessionStack->hasTerminalsWithMonitorSilenceDisabled(sessionId));
+    toggleAction->setChecked(!sessionStack->hasContentWithMonitorSilenceDisabled(sessionId));
 }
 
 void TabBar::updateToggleKeyboardInputMenu(int sessionId)
@@ -182,7 +183,7 @@ void TabBar::updateToggleKeyboardInputMenu(int sessionId)
 
     SessionStack *sessionStack = m_mainWindow->sessionStack();
 
-    QStringList terminalIds = sessionStack->terminalIdsForSessionId(sessionId).split(QLatin1Char(','), Qt::SkipEmptyParts);
+    QStringList terminalIds = sessionStack->contentIdsForSessionId(sessionId).split(QLatin1Char(','), Qt::SkipEmptyParts);
 
     m_toggleKeyboardInputMenu->clear();
 
@@ -210,7 +211,7 @@ void TabBar::updateToggleKeyboardInputMenu(int sessionId)
 
             QAction *action = m_toggleKeyboardInputMenu->addAction(xi18nc("@action", "For Terminal %1", count));
             action->setCheckable(true);
-            action->setChecked(!sessionStack->isTerminalKeyboardInputEnabled(terminalId));
+            action->setChecked(!sessionStack->isContentKeyboardInputEnabled(terminalId));
             action->setData(terminalId);
             connect(action, SIGNAL(triggered(bool)), m_mainWindow, SLOT(handleToggleTerminalKeyboardInput(bool)));
         }
@@ -227,7 +228,7 @@ void TabBar::updateToggleMonitorActivityMenu(int sessionId)
 
     SessionStack *sessionStack = m_mainWindow->sessionStack();
 
-    QStringList terminalIds = sessionStack->terminalIdsForSessionId(sessionId).split(QLatin1Char(','), Qt::SkipEmptyParts);
+    QStringList terminalIds = sessionStack->contentIdsForSessionId(sessionId).split(QLatin1Char(','), Qt::SkipEmptyParts);
 
     m_toggleMonitorActivityMenu->clear();
 
@@ -255,7 +256,7 @@ void TabBar::updateToggleMonitorActivityMenu(int sessionId)
 
             QAction *action = m_toggleMonitorActivityMenu->addAction(xi18nc("@action", "In Terminal %1", count));
             action->setCheckable(true);
-            action->setChecked(sessionStack->isTerminalMonitorActivityEnabled(terminalId));
+            action->setChecked(sessionStack->isContentMonitorActivityEnabled(terminalId));
             action->setData(terminalId);
             connect(action, SIGNAL(triggered(bool)), m_mainWindow, SLOT(handleToggleTerminalMonitorActivity(bool)));
         }
@@ -272,7 +273,7 @@ void TabBar::updateToggleMonitorSilenceMenu(int sessionId)
 
     SessionStack *sessionStack = m_mainWindow->sessionStack();
 
-    QStringList terminalIds = sessionStack->terminalIdsForSessionId(sessionId).split(QLatin1Char(','), Qt::SkipEmptyParts);
+    QStringList terminalIds = sessionStack->contentIdsForSessionId(sessionId).split(QLatin1Char(','), Qt::SkipEmptyParts);
 
     m_toggleMonitorSilenceMenu->clear();
 
@@ -300,7 +301,7 @@ void TabBar::updateToggleMonitorSilenceMenu(int sessionId)
 
             QAction *action = m_toggleMonitorSilenceMenu->addAction(xi18nc("@action", "In Terminal %1", count));
             action->setCheckable(true);
-            action->setChecked(sessionStack->isTerminalMonitorSilenceEnabled(terminalId));
+            action->setChecked(sessionStack->isContentMonitorSilenceEnabled(terminalId));
             action->setData(terminalId);
             connect(action, SIGNAL(triggered(bool)), m_mainWindow, SLOT(handleToggleTerminalMonitorSilence(bool)));
         }

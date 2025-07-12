@@ -3,6 +3,8 @@ configure_file(config-yakuake.h.in ${CMAKE_CURRENT_BINARY_DIR}/config-yakuake.h)
 add_executable(yakuake)
 
 target_sources(yakuake PRIVATE
+    browser.cpp
+    browser.h
     config/appearancesettings.cpp
     config/appearancesettings.h
     config/skinlistdelegate.cpp
