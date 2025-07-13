@@ -18,6 +18,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QShortcut>
 #include <QVBoxLayout>
 #include <QWidget>
 
@@ -58,6 +59,8 @@ Browser::Browser(QWidget *parent)
     m_layout->addWidget(m_urlBar);
 
     connect(m_urlBar, &QLineEdit::returnPressed, this, &Browser::openUrl);
+    auto shortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_L), m_partWidget);
+    connect(shortcut, &QShortcut::activated, m_urlBar, qOverload<>(&QLineEdit::setFocus));
 
     if (m_browserWidget) {
         m_browserWidget->setFocusPolicy(Qt::WheelFocus);
