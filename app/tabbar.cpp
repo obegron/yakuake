@@ -712,9 +712,10 @@ void TabBar::addTab(int sessionId, const QString &title)
 {
     m_tabs.append(sessionId);
 
-    if (title.isEmpty())
-        m_tabTitles.insert(sessionId, standardTabTitle());
-    else
+    if (title.isEmpty()) {
+        Session *session = m_mainWindow->sessionStack()->session(sessionId);
+        m_tabTitles.insert(sessionId, standardTabTitle(session->contentType()));
+    } else
         m_tabTitles.insert(sessionId, title);
 
     Q_EMIT tabSelected(sessionId);
@@ -898,9 +899,9 @@ int TabBar::sessionAtTab(int index)
         return m_tabs.at(index);
 }
 
-QString TabBar::standardTabTitle()
+QString TabBar::standardTabTitle(Session::SessionContent contentType)
 {
-    QString newTitle = makeTabTitle(0);
+    QString newTitle = makeTabTitle(0, contentType);
 
     bool nameOk;
     int count = 0;
@@ -921,15 +922,23 @@ QString TabBar::standardTabTitle()
 
         if (!nameOk) {
             count++;
-            newTitle = makeTabTitle(count);
+            newTitle = makeTabTitle(count, contentType);
         }
     } while (!nameOk);
 
     return newTitle;
 }
 
-QString TabBar::makeTabTitle(int id)
+QString TabBar::makeTabTitle(int id, Session::SessionContent contentType)
 {
+    if (contentType == Session::BrowserType) {
+        if (id == 0) {
+            return xi18nc("@title:tab", "Browser");
+        } else {
+            return xi18nc("@title:tab", "Browser No. %1", id + 1);
+        }
+    }
+
     if (id == 0) {
         return xi18nc("@title:tab", "Shell");
     } else {

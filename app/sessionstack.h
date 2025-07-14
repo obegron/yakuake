@@ -41,6 +41,10 @@ public:
     QList<KActionCollection *> getPartActionCollections();
 
     bool wantsBlur() const;
+    Session *session(int sessionId) const
+    {
+        return m_sessions.value(sessionId);
+    }
 
 public Q_SLOTS:
     int addSessionImpl(Session::SessionContent contentType, Session::SessionType type = Session::Single);

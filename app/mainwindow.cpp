@@ -304,7 +304,7 @@ void MainWindow::setupActions()
 
     action = actionCollection()->addAction(QStringLiteral("new-browser-session"));
     action->setText(xi18nc("@action", "New Browser Session"));
-    action->setIcon(QIcon::fromTheme(QStringLiteral("web-browser")));
+    action->setIcon(QIcon::fromTheme(QStringLiteral("network-web")));
     actionCollection()->setDefaultShortcut(action, QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_B));
     connect(action, SIGNAL(triggered()), m_sessionStack, SLOT(addBrowserSession()));
 

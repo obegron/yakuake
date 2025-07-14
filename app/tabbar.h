@@ -8,6 +8,8 @@
 #ifndef TABBAR_H
 #define TABBAR_H
 
+#include "session.h"
+
 #include <QHash>
 #include <QList>
 #include <QWidget>
@@ -92,8 +94,8 @@ private Q_SLOTS:
     void interactiveRenameDone();
 
 private:
-    QString standardTabTitle();
-    QString makeTabTitle(int number);
+    QString standardTabTitle(Session::SessionContent contentType);
+    QString makeTabTitle(int number, Session::SessionContent contentType);
     int tabAt(int x);
 
     void readyTabContextMenu();
