@@ -17,6 +17,7 @@
 #include <KNotification>
 
 #include <QDBusConnection>
+#include <QLineEdit>
 
 #include <algorithm>
 
@@ -132,6 +133,10 @@ void SessionStack::raiseSession(int sessionId)
 
     if (session->widget()->focusWidget())
         session->widget()->focusWidget()->setFocus();
+
+    if (session->contentType() == Session::BrowserType) {
+        session->getBrowser(session->activeId())->urlBar()->setFocus();
+    }
 
     if (session->contentType() == Session::TerminalType && session->hasTerminalsWithKeyboardInputDisabled())
         m_visualEventOverlay->show();

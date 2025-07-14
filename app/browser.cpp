@@ -60,7 +60,13 @@ Browser::Browser(QWidget *parent)
 
     connect(m_urlBar, &QLineEdit::returnPressed, this, &Browser::openUrl);
     auto shortcut = new QShortcut(QKeySequence(Qt::CTRL | Qt::Key_L), m_partWidget);
-    connect(shortcut, &QShortcut::activated, m_urlBar, qOverload<>(&QLineEdit::setFocus));
+    connect(shortcut, &QShortcut::activated, this, [this] {
+        m_urlBarVisible = !m_urlBarVisible;
+        m_urlBar->setVisible(m_urlBarVisible);
+        if (m_urlBarVisible) {
+            m_urlBar->setFocus();
+        }
+    });
 
     if (m_browserWidget) {
         m_browserWidget->setFocusPolicy(Qt::WheelFocus);
@@ -168,6 +174,8 @@ void Browser::openUrl()
     KParts::ReadOnlyPart *readOnlyPart = qobject_cast<KParts::ReadOnlyPart *>(m_part);
     if (readOnlyPart) {
         readOnlyPart->openUrl(QUrl(m_urlBar->text()));
+        m_urlBar->hide();
+        m_urlBarVisible = false;
     }
 }
 

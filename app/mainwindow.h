@@ -91,6 +91,7 @@ Q_SIGNALS:
     void windowClosed();
 
 protected:
+    void showEvent(QShowEvent *event) override;
     void paintEvent(QPaintEvent *) override;
     void moveEvent(QMoveEvent *) override;
     void changeEvent(QEvent *event) override;

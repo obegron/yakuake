@@ -43,6 +43,11 @@ public:
         return m_browserWidget;
     }
 
+    QLineEdit *urlBar()
+    {
+        return m_urlBar;
+    }
+
     QWidget *splitter()
     {
         return m_parentSplitter;
@@ -99,6 +104,7 @@ private:
     bool m_closable = true;
 
     bool m_destroying = false;
+    bool m_urlBarVisible = true;
 };
 
 #endif

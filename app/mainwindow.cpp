@@ -1179,6 +1179,18 @@ void MainWindow::wmActiveWindowChanged()
     }
 }
 
+void MainWindow::showEvent(QShowEvent *event)
+{
+    KMainWindow::showEvent(event);
+    KWindowSystem::activateWindow(windowHandle());
+    if (m_sessionStack->activeSessionId() != -1) {
+        Session *session = m_sessionStack->session(m_sessionStack->activeSessionId());
+        if (session && session->widget()) {
+            session->widget()->setFocus();
+        }
+    }
+}
+
 void MainWindow::changeEvent(QEvent *event)
 {
     if (event->type() == QEvent::WindowStateChange && !m_isFullscreen) {
