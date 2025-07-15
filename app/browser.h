@@ -91,7 +91,7 @@ private:
     int m_browserId;
 
     KParts::Part *m_part = nullptr;
-    QWidget *m_partWidget = nullptr;
+    QPointer<QWidget> m_partWidget = nullptr;
     QPointer<QWidget> m_browserWidget = nullptr;
     QWidget *m_parentSplitter;
     QVBoxLayout *m_layout;

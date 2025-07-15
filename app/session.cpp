@@ -660,6 +660,8 @@ void Session::closeTerminal(int terminalId)
 
     delete m_terminals[terminalId];
     m_terminals.erase(terminalId);
+
+    cleanup();
 }
 
 bool Session::hasBrowser(int browserId)
@@ -682,6 +684,8 @@ void Session::closeBrowser(int browserId)
 
     delete m_browsers[browserId];
     m_browsers.erase(browserId);
+
+    cleanup();
 }
 
 void Session::runCommand(const QString &command, int id)

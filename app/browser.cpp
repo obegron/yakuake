@@ -94,6 +94,9 @@ Browser::~Browser()
     if (m_part) {
         delete m_part;
     }
+    if (m_partWidget) {
+        delete m_partWidget;
+    }
 }
 
 bool Browser::eventFilter(QObject * /* watched */, QEvent *event)
